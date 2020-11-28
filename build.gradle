@@ -1,0 +1,44 @@
+plugins 
+{
+    id 'eclipse'
+    id 'java-library'
+}
+
+group 'br.dev.pedrolamarao.sandbox'
+version '1.0.0-SNAPSHOT'
+
+java
+{
+    toolchain.languageVersion = JavaLanguageVersion.of(16)
+}
+
+dependencies
+{
+    implementation group: 'br.dev.pedrolamarao.sandbox', name: 'windows', version: '[1.0, 1.1)'
+
+    testAnnotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.16'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.7.0'    
+    testImplementation group: 'org.projectlombok', name: 'lombok', version: '1.18.16'
+}
+
+repositories
+{
+    mavenCentral()
+}
+
+tasks.withType(JavaCompile)
+{
+    options.compilerArgs.addAll(['--release', '16', '--enable-preview', '--add-modules', 'jdk.incubator.foreign'])
+}
+
+tasks.withType(Test)
+{
+    jvmArgs '--enable-preview', '--add-modules', 'jdk.incubator.foreign', '-Dforeign.restricted=permit'
+    useJUnitPlatform()
+}
+
+eclipse.jdt.file.withProperties 
+{ 
+    props -> props['org.eclipse.jdt.core.compiler.problem.enablePreviewFeatures']= 'enabled'
+}
+

@@ -13,7 +13,7 @@ public final class BusMachine implements AutoCloseable
 	// types
 	
 	@FunctionalInterface
-	public interface Handler
+	public interface IoHandler
 	{
 		void handle (long key, long operation, boolean success, int data) throws Throwable;
 	}
@@ -46,7 +46,7 @@ public final class BusMachine implements AutoCloseable
 		bus.register(key, device);
 	}
 	
-	public boolean step (Duration timeLimit, Handler handler) throws Throwable
+	public boolean step (Duration timeLimit, IoHandler handler) throws Throwable
 	{
 		final Optional<BusEvent> item = bus.pull(timeLimit);
 		if (item.isEmpty()) {

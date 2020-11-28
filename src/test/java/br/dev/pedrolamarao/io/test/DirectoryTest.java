@@ -29,7 +29,7 @@ public final class DirectoryTest
 			bus.register(1, directory);
 			
 			final var buffer = scope.allocate(4096);
-			final var operation = new Operation(scope);
+			@Cleanup final var operation = new Operation();
 			directory.watch(operation, buffer, false, FILE_NOTIFY_CHANGE_FILE_NAME);
 			
 			Files.createTempFile(tmp, null, null);

@@ -12,15 +12,20 @@ import java.util.Optional;
 import br.dev.pedrolamarao.windows.Kernel32;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.NativeScope;
 
-public final class Operation implements Comparable<Operation>
+public final class Operation implements AutoCloseable, Comparable<Operation>
 {
 	private final MemorySegment operation;
 	
-	public Operation (NativeScope nativeScope)
+	public Operation ()
 	{
-		this.operation = nativeScope.allocate(Kernel32.OVERLAPPED.LAYOUT).fill((byte) 0);
+		this.operation = MemorySegment.allocateNative(Kernel32.OVERLAPPED.LAYOUT).fill((byte) 0).share();
+		// #TODO: leaks memory!
+	}
+	
+	public void close ()
+	{
+		operation.close();
 	}
 	
 	//

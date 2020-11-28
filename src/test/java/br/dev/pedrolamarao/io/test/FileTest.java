@@ -17,6 +17,7 @@ import br.dev.pedrolamarao.io.Bus;
 import br.dev.pedrolamarao.io.File;
 import br.dev.pedrolamarao.io.Operation;
 import jdk.incubator.foreign.NativeScope;
+import lombok.Cleanup;
 
 public class FileTest
 {
@@ -53,7 +54,7 @@ public class FileTest
 		{ 
 			bus.register(0, file);
 			
-			final var operation = new Operation(scope);
+			@Cleanup final var operation = new Operation();
 			file.lock(0, 1, 0, operation);
 			
 			final var queuedStatus = bus.pull(Duration.ZERO);
@@ -84,7 +85,7 @@ public class FileTest
 			bus.register(0, file);
 			
 			final var buffer = ByteBuffer.allocateDirect(1024);
-			final var operation = new Operation(scope);
+			@Cleanup final var operation = new Operation();
 			file.pull(buffer, operation);
 			
 			final var queuedStatus = bus.pull(Duration.ZERO);
@@ -115,7 +116,7 @@ public class FileTest
 			bus.register(0, file);
 			
 			final var buffer = ByteBuffer.allocateDirect(1024);
-			final var operation = new Operation(scope);
+			@Cleanup final var operation = new Operation();
 			file.pullAt(1, buffer, operation);
 			
 			final var queuedStatus = bus.pull(Duration.ZERO);

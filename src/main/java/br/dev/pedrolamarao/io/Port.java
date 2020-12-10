@@ -4,7 +4,10 @@ import static br.dev.pedrolamarao.windows.Ws2_32.AI_PASSIVE;
 import static jdk.incubator.foreign.CLinker.C_POINTER;
 import static jdk.incubator.foreign.CLinker.toCString;
 
+import java.io.IOException;
+
 import br.dev.pedrolamarao.windows.Kernel32;
+import br.dev.pedrolamarao.windows.Mswsock;
 import br.dev.pedrolamarao.windows.Ws2_32;
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
@@ -22,6 +25,21 @@ public final class Port implements IoDevice
 		this.handle = handle;
 	}
 	
+	public static Port open (int family, int protocol, String host, int port) throws Throwable
+	{
+		return open(family, Ws2_32.SOCK_STREAM, protocol, host, Integer.toUnsignedString(port, 10));
+	}
+
+	public static Port open (int family, int style, int protocol, String host, int port) throws Throwable
+	{
+		return open(family, style, protocol, host, Integer.toUnsignedString(port, 10));
+	}
+	
+	public static Port open (int family, int protocol, String host, String service) throws Throwable
+	{
+		return open(family, Ws2_32.SOCK_STREAM, protocol, host, service);		
+	}
+	
 	public static Port open (int family, int style, int protocol, String host, String service) throws Throwable
 	{
 		final MemorySegment address;
@@ -36,7 +54,7 @@ public final class Port implements IoDevice
 			Ws2_32.addrinfo.socktype.set(hint, style);
 			Ws2_32.addrinfo.protocol.set(hint, protocol);
 			final var addressRef = scope.allocate(C_POINTER, (long) 0);
-			final var r0 = (int) Ws2_32.getaddrinfo.invokeExact(hostC.address(), serviceC.address(), hint.address(), addressRef.address());
+			final var r0 = (int) Ws2_32.getaddrinfo.invokeExact(hostC.address(), serviceC.address(), hint, addressRef.address());
 			if (r0 != 0) {
 				final var error = (int) Kernel32.getLastError.invokeExact();
 				throw new RuntimeException("open: getaddrinfo: native error: " + error);
@@ -70,7 +88,7 @@ public final class Port implements IoDevice
 		return new Port(handle);
 	}
 	
-	public void close () throws Exception
+	public void close () throws IOException
 	{
 		try
 		{
@@ -79,7 +97,7 @@ public final class Port implements IoDevice
 		} 
 		catch (Throwable e)
 		{
-			throw new Exception("close: foreign linker failure", e);
+			throw new IOException("close: foreign linker failure", e);
 		}
 	}
 	
@@ -99,6 +117,24 @@ public final class Port implements IoDevice
 		if (result == -1) {
 			final var error = (int) Kernel32.getLastError.invokeExact();
 			throw new RuntimeException("listen: native error: " + error);
+		}
+	}
+	
+	public boolean accept (Operation operation, MemorySegment buffer, Link link) throws Throwable
+	{
+		final int result = (int) Mswsock.AcceptEx.invokeExact(handle, link.socket(), buffer.address(), 0, (int) (buffer.byteSize() / 2), (int) (buffer.byteSize() / 2), MemoryAddress.NULL, operation.handle());
+		
+		if (result != 0) {
+			return true;
+		}
+		
+		final var error = (int) Ws2_32.WSAGetLastError.invokeExact();
+
+		switch (error) {
+		case Ws2_32.WSA_IO_PENDING:
+			return false;
+		default:
+			throw new RuntimeException("Mswsock: AcceptEx: native error: " + Integer.toUnsignedString(error, 10));
 		}
 	}
 }

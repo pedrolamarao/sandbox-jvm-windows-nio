@@ -18,6 +18,8 @@ import br.dev.pedrolamarao.io.Link;
 import br.dev.pedrolamarao.io.Operation;
 import br.dev.pedrolamarao.io.OperationState;
 import br.dev.pedrolamarao.windows.Ws2_32;
+import jdk.incubator.foreign.MemoryLayout.PathElement;
+import jdk.incubator.foreign.MemorySegment;
 
 public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketChannel implements WindowsChannel
 {
@@ -108,7 +110,6 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 	
 	//
 	
-	@SuppressWarnings("preview")
 	@Override
 	public AsynchronousSocketChannel bind (SocketAddress local) throws IOException
 	{
@@ -116,23 +117,13 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 			throw new IOException("illegal state: already bound");
 		}
 		
-		if (local instanceof InetSocketAddress address)
+		try (var sockaddr = toSockaddr(local))
 		{
-			try
-			{
-				link = new Link(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP);
-				// #TODO: bind
-				key = group.register(link, this);
-				return this;
-			} 
-			catch (Throwable e)
-			{
-				throw new IOException("bind: failed", e);
-			}
-		}
-		else
-		{
-			throw new IOException("unexpected SocketAddress type: " + local.getClass());
+			final var family = (short) Ws2_32.sockaddr.family.get(sockaddr);
+			link = new Link(family, Ws2_32.SOCK_STREAM, 0);
+			link.bind(sockaddr);
+			key = group.register(link, this);
+			return this;
 		}
 	}
 
@@ -288,5 +279,43 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 		}
 
 		state.operation().close();
+	}
+	
+	@SuppressWarnings("preview")
+	public static MemorySegment toSockaddr (SocketAddress address) throws IOException
+	{
+		if (address instanceof InetSocketAddress inetAddress)
+		{
+			final var length = inetAddress.getAddress().getAddress().length;
+			
+			if (length == 4) 
+			{
+				final var sockaddr = MemorySegment.allocateNative(Ws2_32.sockaddr_in.LAYOUT);
+				Ws2_32.sockaddr_in.family.set(sockaddr, (short) Ws2_32.AF_INET);
+				Ws2_32.sockaddr_in.port.set(sockaddr, (short) inetAddress.getPort());
+				final var addrOffset = Ws2_32.sockaddr_in.LAYOUT.byteOffset(PathElement.groupElement("addr"));
+				final var addr = sockaddr.asSlice(addrOffset, Ws2_32.in_addr.LAYOUT.byteSize());
+				addr.copyFrom(MemorySegment.ofArray(inetAddress.getAddress().getAddress()));
+				return sockaddr;
+			}
+			else if (length == 16) 
+			{
+				final var sockaddr = MemorySegment.allocateNative(Ws2_32.sockaddr_in6.LAYOUT);
+				Ws2_32.sockaddr_in6.family.set(sockaddr, (short) Ws2_32.AF_INET6);
+				Ws2_32.sockaddr_in6.port.set(sockaddr, (short) inetAddress.getPort());
+				final var addrOffset = Ws2_32.sockaddr_in6.LAYOUT.byteOffset(PathElement.groupElement("addr"));
+				final var addr = sockaddr.asSlice(addrOffset, Ws2_32.in6_addr.LAYOUT.byteSize());
+				addr.copyFrom(MemorySegment.ofArray(inetAddress.getAddress().getAddress()));
+				return sockaddr;
+			}
+			else
+			{
+				throw new IOException("unexpected IP address length: " + length);
+			}
+		}
+		else
+		{
+			throw new IOException("unexpected address type: " + address.getClass());
+		}
 	}
 }

@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketOption;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
@@ -94,7 +92,6 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 		throw new RuntimeException("oops");
 	}
 	
-	@SuppressWarnings("preview")
 	@Override
 	public AsynchronousServerSocketChannel bind (SocketAddress address, int backlog) throws IOException
 	{
@@ -102,42 +99,15 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 			throw new IOException("illegal state: channel already open");
 		}
 
-		if (address instanceof InetSocketAddress inetAddress)
-		{	
-			try (var sockaddr = MemorySegment.allocateNative(Ws2_32.sockaddr_storage.LAYOUT).fill((byte) 0))
-			{
-				if (inetAddress.getAddress().getAddress().length == 4) {
-					family = Ws2_32.AF_INET;
-					Ws2_32.sockaddr_in.family.set(sockaddr, (short) family);
-					Ws2_32.sockaddr_in.port.set(sockaddr, networkShort((short) inetAddress.getPort()));
-					final var addrOffset = Ws2_32.sockaddr_in.LAYOUT.byteOffset(PathElement.groupElement("addr"));
-					final var addr = sockaddr.asSlice(addrOffset, Ws2_32.in_addr.LAYOUT.byteSize());
-					addr.copyFrom(MemorySegment.ofArray(inetAddress.getAddress().getAddress()));
-				}
-				else {
-					family = Ws2_32.AF_INET6;
-					Ws2_32.sockaddr_in6.family.set(sockaddr, (short) family);
-					Ws2_32.sockaddr_in6.port.set(sockaddr, networkShort((short) inetAddress.getPort()));
-					final var addrOffset = Ws2_32.sockaddr_in6.LAYOUT.byteOffset(PathElement.groupElement("addr"));
-					final var addr = sockaddr.asSlice(addrOffset, Ws2_32.in6_addr.LAYOUT.byteSize());
-					addr.copyFrom(MemorySegment.ofArray(inetAddress.getAddress().getAddress()));
-				}			
-
-				port = new Port(family, Ws2_32.SOCK_STREAM, 0);
-				port.bind(sockaddr);
-				key = group.register(port, this::complete);
-				port.listen();
-				return this;
-			} 
-			catch (Throwable e)
-			{
-				throw new IOException("bind: failed", e);
-			}
-		}
-		else
+		try (var sockaddr = toSockaddr(address))
 		{
-			throw new IOException("unexpected SocketAddress type: " + address.getClass());
-		}
+			family = (short) Ws2_32.sockaddr.family.get(sockaddr);
+			port = new Port(family, Ws2_32.SOCK_STREAM, 0);
+			port.bind(sockaddr);
+			key = group.register(port, this::complete);
+			port.listen();
+			return this;
+		} 
 	}
 
 	@Override
@@ -241,8 +211,41 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 		state.operation().close();
 	}
 	
-	public static short networkShort (short value)
+	@SuppressWarnings("preview")
+	public static MemorySegment toSockaddr (SocketAddress address) throws IOException
 	{
-		return ByteBuffer.allocate(Short.BYTES).order(ByteOrder.LITTLE_ENDIAN).putShort(0, value).order(ByteOrder.BIG_ENDIAN).getShort(0);
+		if (address instanceof InetSocketAddress inetAddress)
+		{
+			final var length = inetAddress.getAddress().getAddress().length;
+			
+			if (length == 4) 
+			{
+				final var sockaddr = MemorySegment.allocateNative(Ws2_32.sockaddr_in.LAYOUT);
+				Ws2_32.sockaddr_in.family.set(sockaddr, (short) Ws2_32.AF_INET);
+				Ws2_32.sockaddr_in.port.set(sockaddr, (short) inetAddress.getPort());
+				final var addrOffset = Ws2_32.sockaddr_in.LAYOUT.byteOffset(PathElement.groupElement("addr"));
+				final var addr = sockaddr.asSlice(addrOffset, Ws2_32.in_addr.LAYOUT.byteSize());
+				addr.copyFrom(MemorySegment.ofArray(inetAddress.getAddress().getAddress()));
+				return sockaddr;
+			}
+			else if (length == 16) 
+			{
+				final var sockaddr = MemorySegment.allocateNative(Ws2_32.sockaddr_in6.LAYOUT);
+				Ws2_32.sockaddr_in6.family.set(sockaddr, (short) Ws2_32.AF_INET6);
+				Ws2_32.sockaddr_in6.port.set(sockaddr, (short) inetAddress.getPort());
+				final var addrOffset = Ws2_32.sockaddr_in6.LAYOUT.byteOffset(PathElement.groupElement("addr"));
+				final var addr = sockaddr.asSlice(addrOffset, Ws2_32.in6_addr.LAYOUT.byteSize());
+				addr.copyFrom(MemorySegment.ofArray(inetAddress.getAddress().getAddress()));
+				return sockaddr;
+			}
+			else
+			{
+				throw new IOException("unexpected IP address length: " + length);
+			}
+		}
+		else
+		{
+			throw new IOException("unexpected address type: " + address.getClass());
+		}
 	}
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import br.dev.pedrolamarao.windows.Kernel32;
 import br.dev.pedrolamarao.windows.Ws2_32;
 import jdk.incubator.foreign.MemoryAddress;
+import jdk.incubator.foreign.MemorySegment;
 
 public final class Link implements IoDevice
 {
@@ -32,6 +33,17 @@ public final class Link implements IoDevice
 	public int socket ()
 	{
 		return socket;
+	}
+	
+	// methods
+	
+	public void bind (MemorySegment address) throws IOException
+	{
+		final int result = downcall("bind", () -> (int) Ws2_32.bind.invokeExact(socket, address.address(), (int) address.byteSize()));
+		if (result == -1) {
+			final var error = downcall("bind", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
+			throw new IOException("listen: system error: " + error);
+		}
 	}
 	
 	// utility

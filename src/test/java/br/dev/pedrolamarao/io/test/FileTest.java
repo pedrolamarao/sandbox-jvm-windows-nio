@@ -63,10 +63,10 @@ public class FileTest
 			// assertEquals(operation, queuedStatus.get().operation());
 			assertEquals(0, queuedStatus.get().data());
 			
-			final var operationStatus = file.get(operation);
+			final var operationStatus = file.query(operation);
 			assertTrue(operationStatus.complete());
 			assertEquals(0, operationStatus.result());
-			assertEquals(0, operationStatus.data());
+			assertEquals(0, operationStatus.bytes());
 		}
 	}
 	
@@ -94,10 +94,10 @@ public class FileTest
 			// assertEquals(operation, queuedStatus.get().operation());
 			assertEquals(size, queuedStatus.get().data());
 			
-			final var operationStatus = file.get(operation);
+			final var operationStatus = file.query(operation);
 			assertTrue(operationStatus.complete());
 			assertEquals(0, operationStatus.result());
-			assertEquals(size, operationStatus.data());
+			assertEquals(size, operationStatus.bytes());
 		}
 	}
 	
@@ -125,10 +125,10 @@ public class FileTest
 			// assertEquals(operation, queuedStatus.get().operation());
 			assertEquals((size - 1), queuedStatus.get().data());
 			
-			final var operationStatus = file.get(operation);
+			final var operationStatus = file.query(operation);
 			assertTrue(operationStatus.complete());
 			assertEquals(0, operationStatus.result());
-			assertEquals((size - 1), operationStatus.data());
+			assertEquals((size - 1), operationStatus.bytes());
 		}
 	}
 	

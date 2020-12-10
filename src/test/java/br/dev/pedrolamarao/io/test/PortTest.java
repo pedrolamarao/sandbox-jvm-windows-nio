@@ -1,6 +1,5 @@
 package br.dev.pedrolamarao.io.test;
 
-import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
@@ -47,7 +46,7 @@ public final class PortTest
 		@Cleanup final var operation = new Operation();
 		@Cleanup final var buffer = MemorySegment.allocateNative(2048);
 		port.accept(operation, buffer, link);
-		operation.get(port, Duration.ofMillis(100), false);
-		operation.cancel(port);
+		port.query(operation);
+		port.cancel(operation);
 	}
 }

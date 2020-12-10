@@ -7,7 +7,6 @@ import java.net.SocketOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -253,7 +252,7 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 		
 		try 
 		{ 
-			systemState = state.operation().get(link, Duration.ZERO, false);
+			systemState = link.query(state.operation());
 		}
 	    catch (Throwable cause) 
 		{
@@ -276,7 +275,7 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 		{
 			if (systemResult == 0)
 			{
-				state.handler().completed(systemState.data(), state.context());
+				state.handler().completed(systemState.bytes(), state.context());
 			}
 			else
 			{

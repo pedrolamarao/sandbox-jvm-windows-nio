@@ -8,7 +8,6 @@ import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -193,7 +192,7 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 		
 		try 
 		{ 
-			systemState = state.operation().get(port, Duration.ZERO, false);
+			systemState = port.query(state.operation());
 		}
 	    catch (Throwable cause) 
 		{

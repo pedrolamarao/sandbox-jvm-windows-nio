@@ -59,7 +59,7 @@ public final class CallbackScope implements AutoCloseable
 		try (var guard = lock(lock)) {
 			pending.forEach((key, thing) -> {
 				try {
-					thing.operation().cancel(thing.device());
+					thing.device().cancel(thing.operation());
 				}
 				catch (Throwable e) {
 					// #TODO: what?

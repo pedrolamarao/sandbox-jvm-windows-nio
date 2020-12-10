@@ -45,7 +45,7 @@ public sealed interface IoDevice extends Device
 				result = (int) Ws2_32.WSAGetOverlappedResult.invokeExact((int) handle().toRawLongValue(), operation.handle(), dataRef.address(), (int) 0, flagsRef.address());
 			}		
 			else {
-				result = (int) Kernel32.getOverlappedResultEx.invokeExact(handle(), operation.handle().address(), dataRef.address(), (int) 0, (int) 0);
+				result = (int) Kernel32.getOverlappedResultEx.invokeExact(handle(), operation.handle(), dataRef.address(), (int) 0, (int) 0);
 			}
 			
 			if (result != 0) {

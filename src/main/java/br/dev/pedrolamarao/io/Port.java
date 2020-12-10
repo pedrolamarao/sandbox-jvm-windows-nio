@@ -54,7 +54,7 @@ public final class Port implements IoDevice
 			Ws2_32.addrinfo.socktype.set(hint, style);
 			Ws2_32.addrinfo.protocol.set(hint, protocol);
 			final var addressRef = scope.allocate(C_POINTER, (long) 0);
-			final var r0 = (int) Ws2_32.getaddrinfo.invokeExact(hostC.address(), serviceC.address(), hint, addressRef.address());
+			final var r0 = (int) Ws2_32.getaddrinfo.invokeExact(hostC.address(), serviceC.address(), hint.address(), addressRef.address());
 			if (r0 != 0) {
 				final var error = (int) Kernel32.getLastError.invokeExact();
 				throw new RuntimeException("open: getaddrinfo: native error: " + error);

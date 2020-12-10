@@ -17,28 +17,23 @@ public final class PortTest
 	@Test
 	public void listen () throws Throwable
 	{
-		final var port0 = Port.open(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP, "localhost", "12345");
-		port0.listen();
-		port0.close();
-
-		final var port1 = Port.open(Ws2_32.AF_INET, Ws2_32.IPPROTO_TCP, "localhost", "12345");
-		port1.listen();
-		port1.close();
-
-		final var port2 = Port.open(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP, "localhost", 12345);
-		port2.listen();
-		port2.close();
-
-		final var port3 = Port.open(Ws2_32.AF_INET, Ws2_32.IPPROTO_TCP, "localhost", 12345);
-		port3.listen();
-		port3.close();
+		@Cleanup final var address = MemorySegment.allocateNative(Ws2_32.sockaddr_in.LAYOUT).fill((byte) 0);
+		Ws2_32.sockaddr_in.family.set(address, (short) Ws2_32.AF_INET);
+		
+		@Cleanup final var port = new Port(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP);
+		port.bind(address);
+		port.listen();
 	}
 	
 	@Test
 	@Timeout(value=1000, unit=TimeUnit.MILLISECONDS)
 	public void accept () throws Throwable
 	{
-		@Cleanup final var port = Port.open(Ws2_32.AF_INET, Ws2_32.IPPROTO_TCP, "0.0.0.0", 12345);
+		@Cleanup final var address = MemorySegment.allocateNative(Ws2_32.sockaddr_in.LAYOUT).fill((byte) 0);
+		Ws2_32.sockaddr_in.family.set(address, (short) Ws2_32.AF_INET);
+		
+		@Cleanup final var port = new Port(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP);
+		port.bind(address);
 		port.listen();
 		
 		@Cleanup final var link = new Link(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP);

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketOption;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
@@ -13,12 +15,12 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 
-import br.dev.pedrolamarao.io.IoDevice;
 import br.dev.pedrolamarao.io.Link;
 import br.dev.pedrolamarao.io.Operation;
 import br.dev.pedrolamarao.io.OperationState;
 import br.dev.pedrolamarao.io.Port;
 import br.dev.pedrolamarao.windows.Ws2_32;
+import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemorySegment;
 
 public final class WindowsAsynchronousServerSocketChannel extends AsynchronousServerSocketChannel implements WindowsChannel
@@ -36,6 +38,8 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 			handler().failed(cause, context());
 		}
 	}
+
+	private int family = Ws2_32.AF_UNSPEC;
 	
 	private final WindowsAsynchronousChannelGroup group;
 	
@@ -44,6 +48,8 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 	private final HashMap<Long, AcceptState> operations = new HashMap<>();
 	
 	private Port port = null;
+	
+	// life-cycle
 	
 	public WindowsAsynchronousServerSocketChannel (WindowsAsynchronousChannelProvider provider, WindowsAsynchronousChannelGroup group)
 	{
@@ -62,12 +68,7 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 		operations.forEach((key, state) -> state.operation().close());
 	}
 	
-	//
-	
-	public IoDevice getDevice ()
-	{
-		return port;
-	}
+	// properties
 
 	@Override
 	public boolean isOpen ()
@@ -75,7 +76,7 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 		return (port != null);
 	}
 	
-	//
+	// methods
 
 	@Override
 	public <T> T getOption (SocketOption<T> name) throws IOException
@@ -92,27 +93,38 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 	{
 		throw new RuntimeException("oops");
 	}
-
-	private int socketFamily;
-	
-	private int socketProtocol;
 	
 	@SuppressWarnings("preview")
 	@Override
-	public AsynchronousServerSocketChannel bind (SocketAddress local, int backlog) throws IOException
+	public AsynchronousServerSocketChannel bind (SocketAddress address, int backlog) throws IOException
 	{
 		if (isOpen()) {
 			throw new IOException("illegal state: channel already open");
 		}
-		
-		if (local instanceof InetSocketAddress address)
-		{
-			socketFamily = Ws2_32.AF_INET;
-			socketProtocol = Ws2_32.IPPROTO_TCP;
-			
-			try
+
+		if (address instanceof InetSocketAddress inetAddress)
+		{	
+			try (var sockaddr = MemorySegment.allocateNative(Ws2_32.sockaddr_storage.LAYOUT).fill((byte) 0))
 			{
-				port = Port.open(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP, address.getAddress().getHostName(), address.getPort());
+				if (inetAddress.getAddress().getAddress().length == 4) {
+					family = Ws2_32.AF_INET;
+					Ws2_32.sockaddr_in.family.set(sockaddr, (short) family);
+					Ws2_32.sockaddr_in.port.set(sockaddr, networkShort((short) inetAddress.getPort()));
+					final var addrOffset = Ws2_32.sockaddr_in.LAYOUT.byteOffset(PathElement.groupElement("addr"));
+					final var addr = sockaddr.asSlice(addrOffset, Ws2_32.in_addr.LAYOUT.byteSize());
+					addr.copyFrom(MemorySegment.ofArray(inetAddress.getAddress().getAddress()));
+				}
+				else {
+					family = Ws2_32.AF_INET6;
+					Ws2_32.sockaddr_in6.family.set(sockaddr, (short) family);
+					Ws2_32.sockaddr_in6.port.set(sockaddr, networkShort((short) inetAddress.getPort()));
+					final var addrOffset = Ws2_32.sockaddr_in6.LAYOUT.byteOffset(PathElement.groupElement("addr"));
+					final var addr = sockaddr.asSlice(addrOffset, Ws2_32.in6_addr.LAYOUT.byteSize());
+					addr.copyFrom(MemorySegment.ofArray(inetAddress.getAddress().getAddress()));
+				}			
+
+				port = new Port(family, Ws2_32.SOCK_STREAM, 0);
+				port.bind(sockaddr);
 				key = group.register(port, this::complete);
 				port.listen();
 				return this;
@@ -124,7 +136,7 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 		}
 		else
 		{
-			throw new IOException("unexpected SocketAddress type: " + local.getClass());
+			throw new IOException("unexpected SocketAddress type: " + address.getClass());
 		}
 	}
 
@@ -146,20 +158,20 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 			throw new RuntimeException("unexpected state: not bound");
 		}
 		
-		final var operation = new Operation();
-		final var buffer = MemorySegment.allocateNative(2048);
-		final var link = new Link(socketFamily, Ws2_32.SOCK_STREAM, socketProtocol); 
-		
 		try
 		{
+			final var operation = new Operation();
+			final var buffer = MemorySegment.allocateNative(2048);
+			final var link = new Link(family, Ws2_32.SOCK_STREAM, 0); 
+
 			port.accept(operation, buffer, link);
+			
+			operations.put(operation.handle().toRawLongValue(), new AcceptState(operation, buffer, link, attachment, (CompletionHandler<AsynchronousSocketChannel, Object>) handler));
 		} 
-		catch (Throwable e)
+		catch (IOException e)
 		{
-			throw new RuntimeException("accept: failed", e);
+			group.submit(() -> handler.failed(e, attachment));
 		}
-		
-		operations.put(operation.handle().toRawLongValue(), new AcceptState(operation, buffer, link, attachment, (CompletionHandler<AsynchronousSocketChannel, Object>) handler));
 	}
 
 	@Override
@@ -227,5 +239,10 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 		}
 
 		state.operation().close();
+	}
+	
+	public static short networkShort (short value)
+	{
+		return ByteBuffer.allocate(Short.BYTES).order(ByteOrder.LITTLE_ENDIAN).putShort(0, value).order(ByteOrder.BIG_ENDIAN).getShort(0);
 	}
 }

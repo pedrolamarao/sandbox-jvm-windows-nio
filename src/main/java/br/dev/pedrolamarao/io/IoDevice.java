@@ -1,7 +1,6 @@
 package br.dev.pedrolamarao.io;
 
 import java.time.Duration;
-import java.util.Optional;
 
 import br.dev.pedrolamarao.windows.Kernel32;
 import jdk.incubator.foreign.MemoryAddress;
@@ -24,7 +23,7 @@ public sealed interface IoDevice extends Device
 		operation.cancel(this);
 	}
 	
-	default Optional<OperationStatus> get (Operation operation) throws Throwable
+	default OperationState get (Operation operation) throws Throwable
 	{
 		return operation.get(this, Duration.ZERO, false);
 	}

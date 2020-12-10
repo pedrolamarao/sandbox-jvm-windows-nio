@@ -7,7 +7,6 @@ import static jdk.incubator.foreign.MemoryAccess.getInt;
 import static jdk.incubator.foreign.MemorySegment.allocateNative;
 
 import java.time.Duration;
-import java.util.Optional;
 
 import br.dev.pedrolamarao.windows.Kernel32;
 import jdk.incubator.foreign.MemoryAddress;
@@ -76,20 +75,20 @@ public final class Operation implements AutoCloseable, Comparable<Operation>
 		operation.fill((byte) 0);
 	}
 	
-	public Optional<OperationStatus> get (Device device, Duration timeLimit, boolean alertable) throws Throwable
+	public OperationState get (Device device, Duration timeLimit, boolean alertable) throws Throwable
 	{
 		try (final var dataRef = allocateNative(C_INT)) 
 		{
 			final var result = (int) Kernel32.getOverlappedResultEx.invokeExact(device.handle(), operation.address(), dataRef.address(), (int) timeLimit.toMillis(), (alertable ? 1 : 0));
 			if (result != 0) {
-				return Optional.of(new OperationStatus(0, getInt(dataRef)));
+				return new OperationState(true, 0, getInt(dataRef));
 			}
 			else {
 				final var error = (int) Kernel32.getLastError.invokeExact();
 				return switch (error) {
-					case ERROR_IO_INCOMPLETE -> Optional.empty();
-					case WAIT_TIMEOUT -> Optional.empty();
-					default -> Optional.of(new OperationStatus(error, getInt(dataRef)));
+					case ERROR_IO_INCOMPLETE -> new OperationState(false, 0, 0);
+					case WAIT_TIMEOUT -> new OperationState(false, 0, 0);
+					default -> new OperationState(true, error, getInt(dataRef));
 				};
 			}
 		}

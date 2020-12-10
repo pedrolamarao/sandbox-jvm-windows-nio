@@ -10,7 +10,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
@@ -18,7 +17,7 @@ import java.util.concurrent.Future;
 import br.dev.pedrolamarao.io.IoDevice;
 import br.dev.pedrolamarao.io.Link;
 import br.dev.pedrolamarao.io.Operation;
-import br.dev.pedrolamarao.io.OperationStatus;
+import br.dev.pedrolamarao.io.OperationState;
 import br.dev.pedrolamarao.io.Port;
 import br.dev.pedrolamarao.windows.Ws2_32;
 import jdk.incubator.foreign.MemorySegment;
@@ -190,7 +189,7 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 			return;
 		}
 
-		final Optional<OperationStatus> systemState;
+		final OperationState systemState;
 		
 		try 
 		{ 
@@ -204,12 +203,12 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 	    	return;
 	    }
 	    
-		if (systemState.isEmpty()) {
+		if (! systemState.complete()) {
 			// what!?
 			return;
 		}
 		
-		final var systemResult = systemState.get().status();
+		final var systemResult = systemState.result();
 
 		try
 		{

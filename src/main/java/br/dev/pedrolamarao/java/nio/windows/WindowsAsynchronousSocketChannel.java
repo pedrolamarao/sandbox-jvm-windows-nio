@@ -9,7 +9,6 @@ import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ForkJoinPool;
@@ -18,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import br.dev.pedrolamarao.io.Link;
 import br.dev.pedrolamarao.io.Operation;
-import br.dev.pedrolamarao.io.OperationStatus;
+import br.dev.pedrolamarao.io.OperationState;
 import br.dev.pedrolamarao.windows.Ws2_32;
 
 public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketChannel implements WindowsChannel
@@ -250,7 +249,7 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 		
 		// get operation result
 
-		final Optional<OperationStatus> systemState;
+		final OperationState systemState;
 		
 		try 
 		{ 
@@ -264,20 +263,20 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 	    	return;
 	    }
 	    
-		if (systemState.isEmpty()) {
+		if (! systemState.complete()) {
 			// what!?
 			return;
 		}
 		
 		// evaluate operation result
 		
-		final var systemResult = systemState.get().status();
+		final var systemResult = systemState.result();
 
 		try
 		{
 			if (systemResult == 0)
 			{
-				state.handler().completed(systemState.get().data(), state.context());
+				state.handler().completed(systemState.data(), state.context());
 			}
 			else
 			{

@@ -64,9 +64,9 @@ public class FileTest
 			assertEquals(0, queuedStatus.get().data());
 			
 			final var operationStatus = file.get(operation);
-			assertTrue(operationStatus.isPresent());
-			assertEquals(0, operationStatus.get().status());
-			assertEquals(0, operationStatus.get().data());
+			assertTrue(operationStatus.complete());
+			assertEquals(0, operationStatus.result());
+			assertEquals(0, operationStatus.data());
 		}
 	}
 	
@@ -95,9 +95,9 @@ public class FileTest
 			assertEquals(size, queuedStatus.get().data());
 			
 			final var operationStatus = file.get(operation);
-			assertTrue(operationStatus.isPresent());
-			assertEquals(0, operationStatus.get().status());
-			assertEquals(size, operationStatus.get().data());
+			assertTrue(operationStatus.complete());
+			assertEquals(0, operationStatus.result());
+			assertEquals(size, operationStatus.data());
 		}
 	}
 	
@@ -126,9 +126,9 @@ public class FileTest
 			assertEquals((size - 1), queuedStatus.get().data());
 			
 			final var operationStatus = file.get(operation);
-			assertTrue(operationStatus.isPresent());
-			assertEquals(0, operationStatus.get().status());
-			assertEquals((size - 1), operationStatus.get().data());
+			assertTrue(operationStatus.complete());
+			assertEquals(0, operationStatus.result());
+			assertEquals((size - 1), operationStatus.data());
 		}
 	}
 	

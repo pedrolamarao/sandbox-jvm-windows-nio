@@ -9,14 +9,14 @@ import jdk.incubator.foreign.MemorySegment;
 
 public final class Port implements IoDevice
 {
-	private final int handle;
+	private final MemoryAddress handle;
 	
 	// life-cycle
 	
 	public Port (int family, int style, int protocol) throws IOException
 	{
-		handle = downcall("<init>", () -> (int) Ws2_32.socket.invokeExact(family, style, protocol));
-		if (handle == -1) {
+		handle = downcall("<init>", () -> (MemoryAddress) Ws2_32.socket.invokeExact(family, style, protocol));
+		if (handle == MemoryAddress.ofLong(-1)) {
 			final var error = downcall("<init>", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
 			throw new IOException("<init>: system error: " + error);
 		}
@@ -32,7 +32,7 @@ public final class Port implements IoDevice
 	@Override
 	public MemoryAddress handle ()
 	{
-		return MemoryAddress.ofLong(handle);
+		return handle;
 	}
 	
 	// methods
@@ -58,7 +58,7 @@ public final class Port implements IoDevice
 	public boolean accept (Operation operation, MemorySegment buffer, Link link) throws IOException
 	{
 		final int result = 
-			downcall("accept", () -> (int) Mswsock.AcceptEx.invokeExact(handle, link.socket(), buffer.address(), 0, (int) (buffer.byteSize() / 2), (int) (buffer.byteSize() / 2), MemoryAddress.NULL, operation.handle()));
+			downcall("accept", () -> (int) Mswsock.AcceptEx.invokeExact(handle, link.handle(), buffer.address(), 0, (int) (buffer.byteSize() / 2), (int) (buffer.byteSize() / 2), MemoryAddress.NULL, operation.handle()));
 		
 		if (result != 0) {
 			return true;
@@ -72,6 +72,15 @@ public final class Port implements IoDevice
 			return false;
 		default:
 			throw new RuntimeException("Mswsock: AcceptEx: native error: " + Integer.toUnsignedString(error, 10));
+		}
+	}
+	
+	public void setsockopt (int level, int option, MemorySegment value) throws IOException
+	{
+		final int result = downcall("finish", () -> (int) Ws2_32.setsockopt.invokeExact(handle, Ws2_32.SOL_SOCKET, Ws2_32.SO_UPDATE_ACCEPT_CONTEXT, value.address(), (int) value.byteSize()));
+		if (result == -1) {
+			final var error = downcall("finish", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
+			throw new IOException("finish: system error: " + error);
 		}
 	}
 	

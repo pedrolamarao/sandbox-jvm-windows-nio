@@ -9,28 +9,23 @@ import jdk.incubator.foreign.MemorySegment;
 
 public final class Link implements IoDevice
 {
-	private final int socket;
+	private final MemoryAddress socket;
 	
 	// life-cycle
 	
 	public Link (int family, int style, int protocol) throws IOException
 	{
-		socket = downcall("<init>", () -> (int) Ws2_32.socket.invokeExact(family, style, protocol));
-		if (socket == -1) {
+		socket = downcall("<init>", () -> (MemoryAddress) Ws2_32.socket.invokeExact(family, style, protocol));
+		if (socket == MemoryAddress.ofLong(-1)) {
 			final var error = downcall("<init>", () -> (int) Kernel32.getLastError.invokeExact());
 			throw new RuntimeException("native error: " + Integer.toUnsignedString(error, 10));
 		}
 	}
 	
-	@Override
-	public MemoryAddress handle ()
-	{
-		return MemoryAddress.ofLong(socket);
-	}
-	
 	// properties
 	
-	public int socket ()
+	@Override
+	public MemoryAddress handle ()
 	{
 		return socket;
 	}
@@ -43,6 +38,15 @@ public final class Link implements IoDevice
 		if (result == -1) {
 			final var error = downcall("bind", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
 			throw new IOException("listen: system error: " + error);
+		}
+	}
+	
+	public void setsockopt (int level, int option, MemorySegment value) throws IOException
+	{
+		final int result = downcall("finish", () -> (int) Ws2_32.setsockopt.invokeExact(socket, Ws2_32.SOL_SOCKET, Ws2_32.SO_UPDATE_ACCEPT_CONTEXT, value.address(), (int) value.byteSize()));
+		if (result == -1) {
+			final var error = downcall("finish", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
+			throw new IOException("finish: system error: " + error);
 		}
 	}
 	

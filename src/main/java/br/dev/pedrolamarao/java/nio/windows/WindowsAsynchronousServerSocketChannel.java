@@ -98,7 +98,7 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 			port = new Port(family, Ws2_32.SOCK_STREAM, 0);
 			port.bind(sockaddr);
 			key = group.register(port, this::complete);
-			port.listen();
+			port.listen(Ws2_32.SOMAXCONN);
 			return this;
 		} 
 	}

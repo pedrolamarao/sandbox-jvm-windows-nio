@@ -22,7 +22,7 @@ public final class PortTest
 		
 		@Cleanup final var port = new Port(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP);
 		port.bind(address);
-		port.listen();
+		port.listen(Ws2_32.SOMAXCONN);
 	}
 	
 	@Test
@@ -34,7 +34,7 @@ public final class PortTest
 		
 		@Cleanup final var port = new Port(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP);
 		port.bind(address);
-		port.listen();
+		port.listen(Ws2_32.SOMAXCONN);
 		
 		@Cleanup final var link = new Link(Ws2_32.AF_INET, Ws2_32.SOCK_STREAM, Ws2_32.IPPROTO_TCP);
 		

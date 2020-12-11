@@ -46,9 +46,9 @@ public final class Port implements IoDevice
 		}
 	}
 	
-	public void listen () throws IOException
+	public void listen (int backlog) throws IOException
 	{
-		final int result = downcall("listen", () -> (int) Ws2_32.listen.invokeExact(handle, 0));
+		final int result = downcall("listen", () -> (int) Ws2_32.listen.invokeExact(handle, backlog));
 		if (result == -1) {
 			final var error = downcall("listen", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
 			throw new IOException("listen: system error: " + error);

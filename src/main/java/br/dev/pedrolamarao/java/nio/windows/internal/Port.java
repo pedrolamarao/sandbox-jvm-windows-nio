@@ -1,4 +1,4 @@
-package br.dev.pedrolamarao.io;
+package br.dev.pedrolamarao.java.nio.windows.internal;
 
 import java.io.IOException;
 

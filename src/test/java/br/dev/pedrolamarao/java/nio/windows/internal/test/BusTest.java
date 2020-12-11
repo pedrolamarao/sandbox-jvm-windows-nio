@@ -1,4 +1,4 @@
-package br.dev.pedrolamarao.io.test;
+package br.dev.pedrolamarao.java.nio.windows.internal.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -7,7 +7,7 @@ import java.time.Duration;
 
 import org.junit.jupiter.api.Test;
 
-import br.dev.pedrolamarao.io.Bus;
+import br.dev.pedrolamarao.java.nio.windows.internal.Bus;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.NativeScope;
 

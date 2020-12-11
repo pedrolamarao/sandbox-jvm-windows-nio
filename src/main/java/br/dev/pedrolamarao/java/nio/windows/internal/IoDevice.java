@@ -1,4 +1,4 @@
-package br.dev.pedrolamarao.io;
+package br.dev.pedrolamarao.java.nio.windows.internal;
 
 import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.ERROR_IO_INCOMPLETE;
 import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.WAIT_TIMEOUT;

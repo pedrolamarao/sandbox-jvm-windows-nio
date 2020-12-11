@@ -1,4 +1,4 @@
-package br.dev.pedrolamarao.io;
+package br.dev.pedrolamarao.java.nio.windows.internal;
 
 import static jdk.incubator.foreign.CLinker.C_INT;
 import static jdk.incubator.foreign.CLinker.C_POINTER;

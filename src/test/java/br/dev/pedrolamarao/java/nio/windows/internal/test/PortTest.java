@@ -1,14 +1,14 @@
-package br.dev.pedrolamarao.io.test;
+package br.dev.pedrolamarao.java.nio.windows.internal.test;
 
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import br.dev.pedrolamarao.io.Link;
-import br.dev.pedrolamarao.io.Operation;
-import br.dev.pedrolamarao.io.Port;
 import br.dev.pedrolamarao.java.foreign.windows.Ws2_32;
+import br.dev.pedrolamarao.java.nio.windows.internal.Link;
+import br.dev.pedrolamarao.java.nio.windows.internal.Operation;
+import br.dev.pedrolamarao.java.nio.windows.internal.Port;
 import jdk.incubator.foreign.MemorySegment;
 import lombok.Cleanup;
 

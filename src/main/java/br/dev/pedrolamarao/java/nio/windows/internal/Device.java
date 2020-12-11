@@ -1,4 +1,4 @@
-package br.dev.pedrolamarao.io;
+package br.dev.pedrolamarao.java.nio.windows.internal;
 
 import br.dev.pedrolamarao.java.foreign.windows.Kernel32;
 import jdk.incubator.foreign.MemoryAddress;

@@ -8,8 +8,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import br.dev.pedrolamarao.io.Bus;
-import br.dev.pedrolamarao.io.IoDevice;
+import br.dev.pedrolamarao.java.nio.windows.internal.Bus;
+import br.dev.pedrolamarao.java.nio.windows.internal.IoDevice;
 
 public final class WindowsAsynchronousChannelGroup extends AsynchronousChannelGroup
 {

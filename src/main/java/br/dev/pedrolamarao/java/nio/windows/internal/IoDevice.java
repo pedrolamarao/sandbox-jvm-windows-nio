@@ -39,14 +39,7 @@ public sealed interface IoDevice extends Device
 		try (var dataRef = allocateNative(C_INT).fill((byte) 0);
 			 var flagsRef = allocateNative(C_INT).fill((byte) 0)) 
 		{
-			final int result;
-			
-			if (this instanceof Link || this instanceof Port) {
-				result = (int) Ws2_32.WSAGetOverlappedResult.invokeExact((int) handle().toRawLongValue(), operation.handle(), dataRef.address(), (int) 0, flagsRef.address());
-			}		
-			else {
-				result = (int) Kernel32.getOverlappedResultEx.invokeExact(handle(), operation.handle(), dataRef.address(), (int) 0, (int) 0);
-			}
+			final int result = (int) Ws2_32.WSAGetOverlappedResult.invokeExact((int) handle().toRawLongValue(), operation.handle(), dataRef.address(), (int) 0, flagsRef.address());
 			
 			if (result != 0) {
 				return new OperationState(true, 0, getInt(dataRef), getInt(flagsRef));

@@ -1,8 +1,8 @@
-Date: 2020-11-27
+Date: 2020-12-11
 
 # Summary
 
-Experiments with I/O primitives on JVM runtimes.
+Experimental implementation of asynchronous sockets with a Panama based implementation.
 
 # Build
 

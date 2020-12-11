@@ -266,7 +266,7 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 		{
 			if (systemResult == 0)
 			{
-				state.handler().completed(systemState.bytes(), state.context());
+				state.handler().completed(systemState.data(), state.context());
 			}
 			else
 			{

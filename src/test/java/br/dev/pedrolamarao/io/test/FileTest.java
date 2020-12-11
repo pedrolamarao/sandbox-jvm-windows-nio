@@ -66,7 +66,7 @@ public class FileTest
 			final var operationStatus = file.query(operation);
 			assertTrue(operationStatus.complete());
 			assertEquals(0, operationStatus.result());
-			assertEquals(0, operationStatus.bytes());
+			assertEquals(0, operationStatus.data());
 		}
 	}
 	
@@ -97,7 +97,7 @@ public class FileTest
 			final var operationStatus = file.query(operation);
 			assertTrue(operationStatus.complete());
 			assertEquals(0, operationStatus.result());
-			assertEquals(size, operationStatus.bytes());
+			assertEquals(size, operationStatus.data());
 		}
 	}
 	
@@ -128,7 +128,7 @@ public class FileTest
 			final var operationStatus = file.query(operation);
 			assertTrue(operationStatus.complete());
 			assertEquals(0, operationStatus.result());
-			assertEquals((size - 1), operationStatus.bytes());
+			assertEquals((size - 1), operationStatus.data());
 		}
 	}
 	

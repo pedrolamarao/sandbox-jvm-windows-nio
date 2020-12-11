@@ -1,6 +1,6 @@
 package br.dev.pedrolamarao.io;
 
 @SuppressWarnings("preview")
-public final record OperationState(boolean complete, int result, int bytes, int flags) 
+public final record OperationState(boolean complete, int result, int data, int flags) 
 {
 }

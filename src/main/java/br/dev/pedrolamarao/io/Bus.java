@@ -1,7 +1,7 @@
 package br.dev.pedrolamarao.io;
 
-import static br.dev.pedrolamarao.windows.Kernel32.INVALID_HANDLE_VALUE;
-import static br.dev.pedrolamarao.windows.Kernel32.WAIT_TIMEOUT;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.INVALID_HANDLE_VALUE;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.WAIT_TIMEOUT;
 import static jdk.incubator.foreign.CLinker.C_INT;
 import static jdk.incubator.foreign.CLinker.C_POINTER;
 import static jdk.incubator.foreign.MemoryAccess.getAddress;
@@ -12,7 +12,7 @@ import static jdk.incubator.foreign.MemoryAddress.NULL;
 import java.time.Duration;
 import java.util.Optional;
 
-import br.dev.pedrolamarao.windows.Kernel32;
+import br.dev.pedrolamarao.java.foreign.windows.Kernel32;
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.NativeScope;

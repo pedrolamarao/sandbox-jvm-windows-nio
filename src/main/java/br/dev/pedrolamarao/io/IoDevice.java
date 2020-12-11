@@ -1,14 +1,14 @@
 package br.dev.pedrolamarao.io;
 
-import static br.dev.pedrolamarao.windows.Kernel32.ERROR_IO_INCOMPLETE;
-import static br.dev.pedrolamarao.windows.Kernel32.WAIT_TIMEOUT;
-import static br.dev.pedrolamarao.windows.Ws2_32.WSA_IO_PENDING;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.ERROR_IO_INCOMPLETE;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.WAIT_TIMEOUT;
+import static br.dev.pedrolamarao.java.foreign.windows.Ws2_32.WSA_IO_PENDING;
 import static jdk.incubator.foreign.CLinker.C_INT;
 import static jdk.incubator.foreign.MemoryAccess.getInt;
 import static jdk.incubator.foreign.MemorySegment.allocateNative;
 
-import br.dev.pedrolamarao.windows.Kernel32;
-import br.dev.pedrolamarao.windows.Ws2_32;
+import br.dev.pedrolamarao.java.foreign.windows.Kernel32;
+import br.dev.pedrolamarao.java.foreign.windows.Ws2_32;
 import jdk.incubator.foreign.MemoryAddress;
 
 @SuppressWarnings("preview")

@@ -1,17 +1,17 @@
 package br.dev.pedrolamarao.io;
 
-import static br.dev.pedrolamarao.windows.Kernel32.FILE_FLAG_OVERLAPPED;
-import static br.dev.pedrolamarao.windows.Kernel32.FILE_SHARE_READ;
-import static br.dev.pedrolamarao.windows.Kernel32.GENERIC_READ;
-import static br.dev.pedrolamarao.windows.Kernel32.INVALID_HANDLE_VALUE;
-import static br.dev.pedrolamarao.windows.Kernel32.OPEN_EXISTING;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.FILE_FLAG_OVERLAPPED;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.FILE_SHARE_READ;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.GENERIC_READ;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.INVALID_HANDLE_VALUE;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.OPEN_EXISTING;
 import static jdk.incubator.foreign.MemoryAddress.NULL;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Path;
 
-import br.dev.pedrolamarao.windows.Kernel32;
+import br.dev.pedrolamarao.java.foreign.windows.Kernel32;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;

@@ -2,8 +2,8 @@ package br.dev.pedrolamarao.io;
 
 import java.io.IOException;
 
-import br.dev.pedrolamarao.windows.Mswsock;
-import br.dev.pedrolamarao.windows.Ws2_32;
+import br.dev.pedrolamarao.java.foreign.windows.Mswsock;
+import br.dev.pedrolamarao.java.foreign.windows.Ws2_32;
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 

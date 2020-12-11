@@ -1,16 +1,16 @@
 package br.dev.pedrolamarao.io;
 
-import static br.dev.pedrolamarao.windows.Kernel32.FILE_FLAG_BACKUP_SEMANTICS;
-import static br.dev.pedrolamarao.windows.Kernel32.FILE_FLAG_OVERLAPPED;
-import static br.dev.pedrolamarao.windows.Kernel32.FILE_SHARE_DELETE;
-import static br.dev.pedrolamarao.windows.Kernel32.FILE_SHARE_READ;
-import static br.dev.pedrolamarao.windows.Kernel32.FILE_SHARE_WRITE;
-import static br.dev.pedrolamarao.windows.Kernel32.GENERIC_READ;
-import static br.dev.pedrolamarao.windows.Kernel32.INVALID_HANDLE_VALUE;
-import static br.dev.pedrolamarao.windows.Kernel32.OPEN_EXISTING;
-import static br.dev.pedrolamarao.windows.Kernel32.createFileA;
-import static br.dev.pedrolamarao.windows.Kernel32.getLastError;
-import static br.dev.pedrolamarao.windows.Kernel32.readDirectoryChangesW;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.FILE_FLAG_BACKUP_SEMANTICS;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.FILE_FLAG_OVERLAPPED;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.FILE_SHARE_DELETE;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.FILE_SHARE_READ;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.FILE_SHARE_WRITE;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.GENERIC_READ;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.INVALID_HANDLE_VALUE;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.OPEN_EXISTING;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.createFileA;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.getLastError;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.readDirectoryChangesW;
 import static jdk.incubator.foreign.MemoryAddress.NULL;
 
 import java.nio.file.Path;

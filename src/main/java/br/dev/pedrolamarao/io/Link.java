@@ -5,9 +5,9 @@ import static jdk.incubator.foreign.CLinker.C_POINTER;
 
 import java.io.IOException;
 
-import br.dev.pedrolamarao.windows.Kernel32;
-import br.dev.pedrolamarao.windows.Mswsock;
-import br.dev.pedrolamarao.windows.Ws2_32;
+import br.dev.pedrolamarao.java.foreign.windows.Kernel32;
+import br.dev.pedrolamarao.java.foreign.windows.Mswsock;
+import br.dev.pedrolamarao.java.foreign.windows.Ws2_32;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemoryAddress;

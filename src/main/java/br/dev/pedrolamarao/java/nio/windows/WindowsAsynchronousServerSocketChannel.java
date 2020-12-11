@@ -16,7 +16,7 @@ import br.dev.pedrolamarao.io.Link;
 import br.dev.pedrolamarao.io.Operation;
 import br.dev.pedrolamarao.io.OperationState;
 import br.dev.pedrolamarao.io.Port;
-import br.dev.pedrolamarao.windows.Ws2_32;
+import br.dev.pedrolamarao.java.foreign.windows.Ws2_32;
 import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemorySegment;

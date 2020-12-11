@@ -11,6 +11,10 @@ import java.util.concurrent.TimeUnit;
 import br.dev.pedrolamarao.java.nio.windows.internal.Bus;
 import br.dev.pedrolamarao.java.nio.windows.internal.IoDevice;
 
+/**
+ * AsynchronousChannelGroup with a Panama based implementation.
+ */
+
 public final class WindowsAsynchronousChannelGroup extends AsynchronousChannelGroup
 {
 	private final Bus bus;

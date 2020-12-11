@@ -9,6 +9,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
+/**
+ * AsynchronousChannelProvider with a Panama based implementation.
+ */
+
 public final class WindowsAsynchronousChannelProvider extends AsynchronousChannelProvider
 {
 	@Override

@@ -21,6 +21,9 @@ import br.dev.pedrolamarao.java.nio.windows.internal.OperationState;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.NativeScope;
+/**
+ * AsynchronousSocketChannel with a Panama based implementation.
+ */
 
 public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketChannel implements WindowsChannel
 {

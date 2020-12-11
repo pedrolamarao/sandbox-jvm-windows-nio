@@ -21,6 +21,9 @@ import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.NativeScope;
+/**
+ * AsynchronousServerSocketChannel with a Panama based implementation.
+ */
 
 public final class WindowsAsynchronousServerSocketChannel extends AsynchronousServerSocketChannel implements WindowsChannel
 {

@@ -1,6 +1,6 @@
 package br.dev.pedrolamarao.io.test;
 
-import static br.dev.pedrolamarao.windows.Kernel32.FILE_NOTIFY_CHANGE_FILE_NAME;
+import static br.dev.pedrolamarao.java.foreign.windows.Kernel32.FILE_NOTIFY_CHANGE_FILE_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Timeout;
 import br.dev.pedrolamarao.io.Link;
 import br.dev.pedrolamarao.io.Operation;
 import br.dev.pedrolamarao.io.Port;
-import br.dev.pedrolamarao.windows.Ws2_32;
+import br.dev.pedrolamarao.java.foreign.windows.Ws2_32;
 import jdk.incubator.foreign.MemorySegment;
 import lombok.Cleanup;
 

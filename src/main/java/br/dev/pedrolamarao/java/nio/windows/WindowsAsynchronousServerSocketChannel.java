@@ -6,7 +6,6 @@ import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.CompletionHandler;
 import java.util.HashMap;
 import java.util.Set;
@@ -18,8 +17,8 @@ import br.dev.pedrolamarao.io.Operation;
 import br.dev.pedrolamarao.io.OperationState;
 import br.dev.pedrolamarao.io.Port;
 import br.dev.pedrolamarao.windows.Ws2_32;
-import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.CLinker;
+import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.NativeScope;
 
@@ -61,8 +60,8 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 	public void close () throws IOException
 	{
 		if (port != null) {
-			port.close();
 			group.unregister(key);
+			port.close();
 		}
 		
 		operations.forEach((key, state) -> state.operation().close());
@@ -80,11 +79,7 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 
 	@Override
 	public <T> T getOption (SocketOption<T> name) throws IOException
-	{
-		if (! isOpen()) {
-			throw new ClosedChannelException();
-		}
-		
+	{		
 		throw new IOException("oops");
 	}
 
@@ -97,10 +92,6 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 	@Override
 	public AsynchronousServerSocketChannel bind (SocketAddress address, int backlog) throws IOException
 	{
-		if (isOpen()) {
-			throw new IOException("illegal state: channel already open");
-		}
-
 		try (var sockaddr = toSockaddr(address))
 		{
 			family = (short) Ws2_32.sockaddr.family.get(sockaddr);
@@ -114,22 +105,14 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 
 	@Override
 	public <T> AsynchronousServerSocketChannel setOption (SocketOption<T> name, T value) throws IOException
-	{
-		if (! isOpen()) {
-			throw new ClosedChannelException();
-		}
-		
+	{		
 		throw new IOException("oops");
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public <A> void accept (A attachment, CompletionHandler<AsynchronousSocketChannel, ? super A> handler)
-	{
-		if (! isOpen()) {
-			throw new RuntimeException("unexpected state: not bound");
-		}
-		
+	{		
 		try
 		{
 			final var operation = new Operation();
@@ -137,8 +120,7 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 			final var link = new Link(family, Ws2_32.SOCK_STREAM, 0);
 			final var state = new AcceptState(operation, buffer, link, attachment, (CompletionHandler<AsynchronousSocketChannel, Object>) handler);
 			operations.put(operation.handle().toRawLongValue(), state);
-			port.accept(operation, buffer, link);
-			
+			port.accept(operation, buffer, link);			
 		} 
 		catch (IOException e)
 		{
@@ -156,11 +138,7 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 
 	@Override
 	public SocketAddress getLocalAddress () throws IOException
-	{
-		if (! isOpen()) {
-			throw new ClosedChannelException();
-		}
-		
+	{		
 		throw new IOException("oops");
 	}
 	

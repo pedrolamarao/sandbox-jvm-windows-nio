@@ -80,10 +80,10 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 	@Override
 	public void close () throws IOException
 	{
-		try { link.close(); }
-			catch (Exception e) { }
-		
-		group.unregister(key);
+		if (link != null) {
+			group.unregister(key);
+			link.close();
+		}
 	}
 	
 	//
@@ -189,81 +189,49 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 
 	@Override
 	public <A> void read (ByteBuffer dst, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler)
-	{
-		if (! isOpen()) {
-			group.submit(() -> handler.failed(new IOException("illegal state: not connected"), attachment));			
-		}
-		
+	{		
 		ForkJoinPool.commonPool().submit(() -> handler.failed(new IOException("oops"), attachment));
 	}
 
 	@Override
 	public Future<Integer> read (ByteBuffer dst)
-	{
-		if (isOpen()) {
-			return CompletableFuture.failedFuture(new IOException("illegal state: already connected"));
-		}
-		
+	{		
 		return CompletableFuture.failedFuture(new IOException("oops"));
 	}
 
 	@Override
 	public <A> void read (ByteBuffer[] dsts, int offset, int length, long timeout, TimeUnit unit, A attachment, CompletionHandler<Long, ? super A> handler)
-	{
-		if (! isOpen()) {
-			group.submit(() -> handler.failed(new IOException("illegal state: not connected"), attachment));			
-		}
-		
+	{		
 		ForkJoinPool.commonPool().submit(() -> handler.failed(new IOException("oops"), attachment));
 	}
 
 	@Override
 	public <A> void write (ByteBuffer src, long timeout, TimeUnit unit, A attachment, CompletionHandler<Integer, ? super A> handler)
-	{
-		if (! isOpen()) {
-			group.submit(() -> handler.failed(new IOException("illegal state: not connected"), attachment));			
-		}
-		
+	{		
 		ForkJoinPool.commonPool().submit(() -> handler.failed(new IOException("oops"), attachment));
 	}
 
 	@Override
 	public Future<Integer> write (ByteBuffer src)
-	{
-		if (isOpen()) {
-			return CompletableFuture.failedFuture(new IOException("illegal state: already connected"));
-		}
-		
+	{		
 		return CompletableFuture.failedFuture(new IOException("oops"));
 	}
 
 	@Override
 	public <A> void write (ByteBuffer[] srcs, int offset, int length, long timeout, TimeUnit unit, A attachment, CompletionHandler<Long, ? super A> handler)
-	{
-		if (! isOpen()) {
-			group.submit(() -> handler.failed(new IOException("illegal state: not connected"), attachment));			
-		}
-		
+	{		
 		ForkJoinPool.commonPool().submit(() -> handler.failed(new IOException("oops"), attachment));
 	}
 
 	@Override
 	public AsynchronousSocketChannel shutdownInput () throws IOException
-	{
-		if (! isOpen()) {
-			throw new IOException("illegal state: not connected");
-		}
-		
+	{		
 		throw new IOException("oops");
 	}
 
 	@Override
 	public AsynchronousSocketChannel shutdownOutput () throws IOException
-	{
-		if (! isOpen()) {
-			throw new IOException("illegal state: not connected");
-		}
-		
+	{		
 		throw new IOException("oops");
 	}
 	

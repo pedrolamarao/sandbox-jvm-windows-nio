@@ -23,10 +23,15 @@ public final class Link implements IoDevice
 	public Link (int family, int style, int protocol) throws IOException
 	{
 		socket = downcall("<init>", () -> (MemoryAddress) Ws2_32.socket.invokeExact(family, style, protocol));
-		if (socket == MemoryAddress.ofLong(-1)) {
+		if (Ws2_32.INVALID_SOCKET.equals(socket)) {
 			final var error = downcall("<init>", () -> (int) Kernel32.getLastError.invokeExact());
 			throw new RuntimeException("native error: " + Integer.toUnsignedString(error, 10));
 		}
+	}
+	
+	public void close () throws IOException
+	{
+		downcall("close", () -> (int) Ws2_32.closesocket.invokeExact(socket));
 	}
 	
 	// properties
@@ -44,7 +49,7 @@ public final class Link implements IoDevice
 		final var result = downcall("bind", () -> (int) Ws2_32.bind.invokeExact(socket, address.address(), (int) address.byteSize()));
 		if (result == -1) {
 			final var error = downcall("bind", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
-			throw new IOException("listen: system error: " + error);
+			throw new IOException("bind: system error: " + error);
 		}
 	}
 	
@@ -110,10 +115,10 @@ public final class Link implements IoDevice
 	
 	public void setsockopt (int level, int option, MemorySegment value) throws IOException
 	{
-		final var result = downcall("finish", () -> (int) Ws2_32.setsockopt.invokeExact(socket, Ws2_32.SOL_SOCKET, Ws2_32.SO_UPDATE_ACCEPT_CONTEXT, value.address(), (int) value.byteSize()));
+		final var result = downcall("setsockopt", () -> (int) Ws2_32.setsockopt.invokeExact(socket, Ws2_32.SOL_SOCKET, Ws2_32.SO_UPDATE_ACCEPT_CONTEXT, value.address(), (int) value.byteSize()));
 		if (result == -1) {
-			final var error = downcall("finish", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
-			throw new IOException("finish: system error: " + error);
+			final var error = downcall("setsockopt", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
+			throw new IOException("setsockopt: system error: " + error);
 		}
 	}
 	

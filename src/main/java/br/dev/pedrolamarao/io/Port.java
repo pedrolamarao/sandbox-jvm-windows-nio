@@ -16,7 +16,7 @@ public final class Port implements IoDevice
 	public Port (int family, int style, int protocol) throws IOException
 	{
 		handle = downcall("<init>", () -> (MemoryAddress) Ws2_32.socket.invokeExact(family, style, protocol));
-		if (handle == MemoryAddress.ofLong(-1)) {
+		if (Ws2_32.INVALID_SOCKET.equals(handle)) {
 			final var error = downcall("<init>", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
 			throw new IOException("<init>: system error: " + error);
 		}
@@ -42,7 +42,7 @@ public final class Port implements IoDevice
 		final int result = downcall("bind", () -> (int) Ws2_32.bind.invokeExact(handle, address.address(), (int) address.byteSize()));
 		if (result == -1) {
 			final var error = downcall("bind", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
-			throw new IOException("listen: system error: " + error);
+			throw new IOException("bind: system error: " + error);
 		}
 	}
 	
@@ -65,22 +65,22 @@ public final class Port implements IoDevice
 		}
 		
 		final var error = 
-			downcall("error", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
+			downcall("accept", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
 
 		switch (error) {
 		case Ws2_32.WSA_IO_PENDING:
 			return false;
 		default:
-			throw new RuntimeException("Mswsock: AcceptEx: native error: " + Integer.toUnsignedString(error, 10));
+			throw new IOException("accept: system error: " + Integer.toUnsignedString(error, 10));
 		}
 	}
 	
 	public void setsockopt (int level, int option, MemorySegment value) throws IOException
 	{
-		final int result = downcall("finish", () -> (int) Ws2_32.setsockopt.invokeExact(handle, Ws2_32.SOL_SOCKET, Ws2_32.SO_UPDATE_ACCEPT_CONTEXT, value.address(), (int) value.byteSize()));
+		final int result = downcall("setsockopt", () -> (int) Ws2_32.setsockopt.invokeExact(handle, Ws2_32.SOL_SOCKET, Ws2_32.SO_UPDATE_ACCEPT_CONTEXT, value.address(), (int) value.byteSize()));
 		if (result == -1) {
-			final var error = downcall("finish", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
-			throw new IOException("finish: system error: " + error);
+			final var error = downcall("setsockopt", () -> (int) Ws2_32.WSAGetLastError.invokeExact());
+			throw new IOException("setsockopt: system error: " + error);
 		}
 	}
 	

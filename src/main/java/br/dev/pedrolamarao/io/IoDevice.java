@@ -13,7 +13,7 @@ import jdk.incubator.foreign.MemoryAddress;
 
 @SuppressWarnings("preview")
 public sealed interface IoDevice extends Device
-	permits Directory, File, Link, Port
+	permits Link, Port
 {
 	default void cancel () throws Throwable
 	{

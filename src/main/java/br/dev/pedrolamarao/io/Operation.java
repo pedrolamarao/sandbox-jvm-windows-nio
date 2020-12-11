@@ -11,7 +11,6 @@ public final class Operation implements AutoCloseable
 	public Operation ()
 	{
 		this.operation = MemorySegment.allocateNative(Kernel32.OVERLAPPED.LAYOUT).fill((byte) 0).share();
-		// #TODO: leaks memory!
 	}
 	
 	public void close ()

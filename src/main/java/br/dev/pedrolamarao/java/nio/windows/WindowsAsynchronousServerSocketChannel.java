@@ -134,11 +134,11 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 		{
 			final var operation = new Operation();
 			final var buffer = MemorySegment.allocateNative(2048);
-			final var link = new Link(family, Ws2_32.SOCK_STREAM, 0); 
-
+			final var link = new Link(family, Ws2_32.SOCK_STREAM, 0);
+			final var state = new AcceptState(operation, buffer, link, attachment, (CompletionHandler<AsynchronousSocketChannel, Object>) handler);
+			operations.put(operation.handle().toRawLongValue(), state);
 			port.accept(operation, buffer, link);
 			
-			operations.put(operation.handle().toRawLongValue(), new AcceptState(operation, buffer, link, attachment, (CompletionHandler<AsynchronousSocketChannel, Object>) handler));
 		} 
 		catch (IOException e)
 		{

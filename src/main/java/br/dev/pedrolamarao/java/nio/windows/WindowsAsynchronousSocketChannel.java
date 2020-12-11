@@ -20,11 +20,32 @@ import br.dev.pedrolamarao.io.OperationState;
 import br.dev.pedrolamarao.windows.Ws2_32;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.NativeScope;
 
 public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketChannel implements WindowsChannel
 {
+	private interface IoState
+	{
+		void failed (Throwable cause);
+		
+		Operation operation ();
+		
+		void succeeded (int data);
+	}
+	
 	@SuppressWarnings("preview")
-	public static final record State (Operation operation, Object context, CompletionHandler<Integer, Object> handler) { }
+	public static final record ConnectState (Operation operation, Object context, CompletionHandler<Void, Object> handler) implements IoState
+	{
+		public void failed (Throwable cause)
+		{
+			handler.failed(cause, context);			
+		}
+		
+		public void succeeded (int data)
+		{
+			handler.completed(null, context);			
+		}
+	}
 	
 	private final WindowsAsynchronousChannelGroup group;
 	
@@ -34,7 +55,7 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 	
 	private Link link;
 	
-	private final HashMap<Long, State> operations = new HashMap<>();
+	private final HashMap<Long, IoState> pending = new HashMap<>();
 	
 	public WindowsAsynchronousSocketChannel (WindowsAsynchronousChannelProvider provider, WindowsAsynchronousChannelGroup group)
 	{
@@ -112,13 +133,10 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 	
 	@Override
 	public AsynchronousSocketChannel bind (SocketAddress local) throws IOException
-	{
-		if (link != null) {
-			throw new IOException("illegal state: already bound");
-		}
-		
-		try (var sockaddr = toSockaddr(local))
+	{		
+		try (var nativeScope = NativeScope.boundedScope(Ws2_32.sockaddr_storage.LAYOUT.byteSize()))
 		{
+			final var sockaddr = toSockaddr(local, nativeScope);
 			final var family = (short) Ws2_32.sockaddr.family.get(sockaddr);
 			link = new Link(family, Ws2_32.SOCK_STREAM, 0);
 			link.bind(sockaddr);
@@ -127,24 +145,46 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <A> void connect (SocketAddress remote, A attachment, CompletionHandler<Void, ? super A> handler)
 	{
-		if (isOpen()) {
-			group.submit(() -> handler.failed(new IOException("illegal state: already connected"), attachment));
+		try (var nativeScope = NativeScope.boundedScope(Ws2_32.sockaddr_storage.LAYOUT.byteSize() * 2))
+		{
+			if (link == null) try 
+			{
+				var sockaddr = toWildSockaddr(remote, nativeScope);
+				final var family = (short) Ws2_32.sockaddr.family.get(sockaddr);
+				link = new Link(family, Ws2_32.SOCK_STREAM, 0);
+				link.bind(sockaddr);
+				key = group.register(link, this);
+			}
+			catch (Throwable e)
+			{
+				group.submit(() -> handler.failed(e, attachment));
+			}
+
+			try
+			{
+				final var sockaddr = toSockaddr(remote, nativeScope);
+				final var operation = new Operation();				
+				final var state = new ConnectState(operation, attachment, (CompletionHandler<Void, Object>) handler);
+				pending.put(operation.handle().toRawLongValue(), state);				
+				link.connect(operation, sockaddr);
+			}
+			catch (Throwable e)
+			{
+				group.submit(() -> handler.failed(e, attachment));
+			}
 		}
-		
-		group.submit(() -> handler.failed(new IOException("oops"), attachment));
 	}
 
 	@Override
 	public Future<Void> connect (SocketAddress remote)
 	{
-		if (isOpen()) {
-			return CompletableFuture.failedFuture(new IOException("illegal state: already connected"));
-		}
-		
-		return CompletableFuture.failedFuture(new IOException("oops"));
+		final var future = new CompletableFuture<Void>();
+		connect(remote, future, new CompletableFutureHandler<>());
+		return future;
 	}
 
 	@Override
@@ -227,11 +267,11 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 		throw new IOException("oops");
 	}
 	
-	public void complete (long operation, boolean ignore0, int ignore1)
+	public void complete (long key, boolean ignore0, int ignore1)
 	{
 		// do we know this operation?
 		
-		final var state = operations.remove(operation);
+		final var state = pending.remove(key);
 		if (state == null) {
 			// what!?
 			return;
@@ -248,7 +288,7 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 	    catch (Throwable cause) 
 		{
 	    	// #TODO: record this event
-	    	state.handler().failed(cause, state.context());
+	    	state.failed(cause);
 	    	state.operation().close();
 	    	return;
 	    }
@@ -266,11 +306,11 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 		{
 			if (systemResult == 0)
 			{
-				state.handler().completed(systemState.data(), state.context());
+				state.succeeded(systemState.data());
 			}
 			else
 			{
-				state.handler().failed(new IOException("operation failed: code = " + Integer.toUnsignedString(systemResult, 10)), state.context());
+				state.failed(new IOException("operation failed: code = " + Integer.toUnsignedString(systemResult, 10)));
 			}
 		}
 		catch (Throwable cause)
@@ -282,7 +322,7 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 	}
 	
 	@SuppressWarnings("preview")
-	public static MemorySegment toSockaddr (SocketAddress address) throws IOException
+	public static MemorySegment toSockaddr (SocketAddress address, NativeScope nativeScope) throws IOException
 	{
 		if (address instanceof InetSocketAddress inetAddress)
 		{
@@ -290,7 +330,7 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 			
 			if (length == 4) 
 			{
-				final var sockaddr = MemorySegment.allocateNative(Ws2_32.sockaddr_in.LAYOUT);
+				final var sockaddr = nativeScope.allocate(Ws2_32.sockaddr_in.LAYOUT);
 				Ws2_32.sockaddr_in.family.set(sockaddr, (short) Ws2_32.AF_INET);
 				Ws2_32.sockaddr_in.port.set(sockaddr, (short) inetAddress.getPort());
 				final var addrOffset = Ws2_32.sockaddr_in.LAYOUT.byteOffset(PathElement.groupElement("addr"));
@@ -300,12 +340,42 @@ public final class WindowsAsynchronousSocketChannel extends AsynchronousSocketCh
 			}
 			else if (length == 16) 
 			{
-				final var sockaddr = MemorySegment.allocateNative(Ws2_32.sockaddr_in6.LAYOUT);
+				final var sockaddr = nativeScope.allocate(Ws2_32.sockaddr_in6.LAYOUT);
 				Ws2_32.sockaddr_in6.family.set(sockaddr, (short) Ws2_32.AF_INET6);
 				Ws2_32.sockaddr_in6.port.set(sockaddr, (short) inetAddress.getPort());
 				final var addrOffset = Ws2_32.sockaddr_in6.LAYOUT.byteOffset(PathElement.groupElement("addr"));
 				final var addr = sockaddr.asSlice(addrOffset, Ws2_32.in6_addr.LAYOUT.byteSize());
 				addr.copyFrom(MemorySegment.ofArray(inetAddress.getAddress().getAddress()));
+				return sockaddr;
+			}
+			else
+			{
+				throw new IOException("unexpected IP address length: " + length);
+			}
+		}
+		else
+		{
+			throw new IOException("unexpected address type: " + address.getClass());
+		}
+	}
+	
+	@SuppressWarnings("preview")
+	public static MemorySegment toWildSockaddr (SocketAddress address, NativeScope nativeScope) throws IOException
+	{
+		if (address instanceof InetSocketAddress inetAddress)
+		{
+			final var length = inetAddress.getAddress().getAddress().length;
+			
+			if (length == 4) 
+			{
+				final var sockaddr = nativeScope.allocate(Ws2_32.sockaddr_in.LAYOUT).fill((byte) 0);
+				Ws2_32.sockaddr_in.family.set(sockaddr, (short) Ws2_32.AF_INET);
+				return sockaddr;
+			}
+			else if (length == 16) 
+			{
+				final var sockaddr = nativeScope.allocate(Ws2_32.sockaddr_in6.LAYOUT).fill((byte) 0);
+				Ws2_32.sockaddr_in6.family.set(sockaddr, (short) Ws2_32.AF_INET6);
 				return sockaddr;
 			}
 			else

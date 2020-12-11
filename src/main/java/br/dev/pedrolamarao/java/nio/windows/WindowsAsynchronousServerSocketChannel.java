@@ -19,7 +19,9 @@ import br.dev.pedrolamarao.io.OperationState;
 import br.dev.pedrolamarao.io.Port;
 import br.dev.pedrolamarao.windows.Ws2_32;
 import jdk.incubator.foreign.MemoryLayout.PathElement;
+import jdk.incubator.foreign.CLinker;
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.NativeScope;
 
 public final class WindowsAsynchronousServerSocketChannel extends AsynchronousServerSocketChannel implements WindowsChannel
 {
@@ -191,21 +193,39 @@ public final class WindowsAsynchronousServerSocketChannel extends AsynchronousSe
 		
 		final var systemResult = systemState.result();
 
-		try
+		handler:
+		if (systemResult == 0)
 		{
-			if (systemResult == 0)
+			final var link = state.link();
+			
+			try (var nativeScope = NativeScope.boundedScope(CLinker.C_POINTER.byteSize())) 
 			{
-				final var channel = new WindowsAsynchronousSocketChannel((WindowsAsynchronousChannelProvider) this.provider(), group, state.link());
+				final var value = nativeScope.allocate(CLinker.C_POINTER, port.handle());
+				link.setsockopt(Ws2_32.SOL_SOCKET, Ws2_32.SO_UPDATE_ACCEPT_CONTEXT, value);
+			}
+			catch (IOException e) 
+			{
+				state.fail(e);
+				break handler;
+			}
+
+			final var channel = new WindowsAsynchronousSocketChannel((WindowsAsynchronousChannelProvider) this.provider(), group, link);
+			
+			try {
 				state.complete(channel);
 			}
-			else
-			{
-				state.handler().failed(new IOException("operation failed with status code " + Integer.toUnsignedString(systemResult, 10)), state.context());
+			catch (Throwable cause) {
+				// #TODO: callback failed				
 			}
 		}
-		catch (Throwable cause)
+		else
 		{
-			// #TODO: record this event
+			try {
+				state.fail(new IOException("operation failed with status code " + Integer.toUnsignedString(systemResult, 10)));
+			}
+			catch (Throwable cause) {
+				// #TODO: callback failed
+			}
 		}
 
 		state.operation().close();
